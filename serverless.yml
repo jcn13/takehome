@@ -1,0 +1,77 @@
+service: takehome
+
+frameworkVersion: ">=1.1.0"
+
+custom:
+  bucket: spotify4999
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: dev
+  region: us-west-2
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - dynamodb:PutItem
+        - dynamodb:Scan
+      Resource: "*"
+
+functions:
+  create:
+    handler: handler.create
+    events:
+      - s3:
+          bucket: ${self:custom.bucket}
+          event: s3:ObjectCreated:*
+  scan:
+    handler: handler.scan
+    events:
+      - http:
+          path: scan/{name}
+          method: get
+          cors: true
+  playlist:
+    handler: handler.playlist
+    events:
+      - http:
+          path: playlist/{name}
+          method: post
+          cors: true
+  list:
+    handler: list.list
+    events:
+      - http:
+          path: list/{table}
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    musics:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: musics
+        AttributeDefinitions:
+          - AttributeName: fileId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: fileId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    playlists:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: playlists
+        AttributeDefinitions:
+          - AttributeName: fileId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: fileId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
